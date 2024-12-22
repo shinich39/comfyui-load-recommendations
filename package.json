@@ -1,0 +1,15 @@
+{
+  "name": "comfyui-view-recommendations",
+  "version": "1.0.0",
+  "description": "Load model generation data from civitai",
+  "type": "module",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node test/index.js"
+  },
+  "author": "shinichi39 <shinich39@gmail.com>",
+  "license": "MIT"
+}
