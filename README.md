@@ -49,5 +49,5 @@ SHSLG
 
 ## References  
 
-[civitai-checkpoint-json](https://github.com/shinich39/civitai-checkpoint-json)
-[civitai-lora-json](https://github.com/shinich39/civitai-lora-json)
+- [civitai-checkpoint-json](https://github.com/shinich39/civitai-checkpoint-json)
+- [civitai-lora-json](https://github.com/shinich39/civitai-lora-json)
