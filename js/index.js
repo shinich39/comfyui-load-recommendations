@@ -5,7 +5,7 @@ import { api } from "../../scripts/api.js";
 
 const NODE_TYPE = "ViewRecommendations";
 const MIN_LABEL_LENGTH = 10;
-const KEYS = [
+const CKPT_META_KEYS = [
   ["seed",      `${"Seed".padEnd(MIN_LABEL_LENGTH, " ")}: `],
   ["steps",     `${"Steps".padEnd(MIN_LABEL_LENGTH, " ")}: `],
   ["cfg",       `${"CFG scale".padEnd(MIN_LABEL_LENGTH, " ")}: `],
@@ -21,9 +21,20 @@ const CKPT_TYPES = [
   "Load Checkpoint",
   "CheckpointLoader|pysssss",
   "Checkpoint Loader", // WAS
+  "CheckpointLoaderSimpleShared //Inspire",
 ];
 
-let loadedData;
+const LORA_TYPES = [
+  "LoraLoader",
+  "LoraLoaderModelOnly",
+  "LoraLoader|pysssss",
+  "Load Lora", // WAS
+  "Lora Loader", // WAS
+  "LoraLoaderBlockWeight //Inspire",
+];
+
+let ckptMeta = {},
+    loraMeta = {};
 
 async function load() {
   const response = await api.fetchApi(`/shinich39/comfyui-view-recommendations/load`, {
@@ -40,13 +51,17 @@ async function load() {
   return d;
 }
 
-function findData(ckptName) {
-  const filename = ckptName.split(".").slice(0, ckptName.split(".").length - 1).join(".");
-  if (!loadedData) {
+function findData(dataset, filename) {
+  if (typeof filename == "object" && typeof filename.content == "string") {
+    filename = filename.content;
+  }
+  if (!dataset || typeof filename != "string") {
     return;
   }
 
-  const versionData = loadedData.data.find((d) => d.filenames.indexOf(filename) > -1);
+  filename = filename.split(".").slice(0, filename.split(".").length - 1).join(".");
+
+  const versionData = dataset.data.find((d) => d.filenames.indexOf(filename) > -1);
   if (!versionData) {
     return;
   }
@@ -77,10 +92,14 @@ function createNote(str, x, y) {
 app.registerExtension({
 	name: `shinich39.${NODE_TYPE}`,
   setup() {
-    load().then((res) => loadedData = res);
+    load().then(({ ckpt, lora }) => {
+      ckptMeta = ckpt;
+      loraMeta = lora;
+    });
   },
   async beforeRegisterNodeDef(nodeType, nodeData, app) {
 		const isCkpt = CKPT_TYPES.indexOf(nodeType.comfyClass) > -1;
+		const isLora = LORA_TYPES.indexOf(nodeType.comfyClass) > -1;
     if (isCkpt) {
       const origGetExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
       nodeType.prototype.getExtraMenuOptions = function (_, options) {
@@ -93,7 +112,7 @@ app.registerExtension({
           }
   
           const ckptName = ckptWidget.value;
-          const data = findData(ckptName);
+          const data = findData(ckptMeta, ckptName);
           const dataLen = data?.metadata.length || 0;
           const metadata = data?.metadata || [];
 
@@ -101,33 +120,33 @@ app.registerExtension({
           if (optionIndex > -1) {
             let newOptions = [
               {
-                content: "View Recommendations",
+                content: "View ckpt meta",
                 disabled: dataLen == 0,
-                submenu: {
-                  options: metadata.map((d, i) => {
-                    return {
-                      content: `${i}`,
-                      callback: () => {
-                        let str = "";
-                        str += `${"URL".padEnd(MIN_LABEL_LENGTH, " ")}: https://civitai.com/models/${data.modelId}?modelVersionId=${data.versionId}\n`;
-                        str += `${"Model".padEnd(MIN_LABEL_LENGTH, " ")}: ${data.modelName}\n`;
-                        str += `${"Version".padEnd(MIN_LABEL_LENGTH, " ")}: ${data.versionName}\n`;
-                        str += `${"Updated".padEnd(MIN_LABEL_LENGTH, " ")}: ${new Date(data.updatedAt).toISOString().split('T')[0]}\n`;
 
-                        if (d.w && d.h) {
-                          str += `${"Size".padEnd(MIN_LABEL_LENGTH, " ")}: ${d.w}x${d.h}\n`;
-                        }
-
-                        for (const [key, label] of KEYS) {
-                          if (d[key]) {
-                            str += `${label}${d[key]}\n`;
-                          }
-                        }
-                        
-                        createNote(str, this.pos[0] + this.size[0] + 16, this.pos[1]);
+                callback: () => {
+                  let str = "";
+                  for(const d of metadata) {
+                    str += `${"URL".padEnd(MIN_LABEL_LENGTH, " ")}: https://civitai.com/models/${data.modelId}?modelVersionId=${data.versionId}\n`;
+                    str += `${"Model".padEnd(MIN_LABEL_LENGTH, " ")}: ${data.modelName}\n`;
+                    str += `${"Version".padEnd(MIN_LABEL_LENGTH, " ")}: ${data.versionName}\n`;
+                    str += `${"Updated".padEnd(MIN_LABEL_LENGTH, " ")}: ${new Date(data.updatedAt).toISOString().split('T')[0]}\n`;
+  
+                    if (d.w && d.h) {
+                      str += `${"Size".padEnd(MIN_LABEL_LENGTH, " ")}: ${d.w}x${d.h}\n`;
+                    }
+  
+                    for (const [key, label] of CKPT_META_KEYS) {
+                      if (d[key]) {
+                        str += `${label}${d[key]}\n`;
                       }
                     }
-                  })
+
+                    str += "\n";
+                  }
+
+                  str = str.trim();
+
+                  createNote(str, this.pos[0] + this.size[0] + 16, this.pos[1]);
                 }
               }
             ];
@@ -144,6 +163,55 @@ app.registerExtension({
 
         return r;
       } 
+    } else if (isLora) {
+      const origGetExtraMenuOptions = nodeType.prototype.getExtraMenuOptions;
+      nodeType.prototype.getExtraMenuOptions = function (_, options) {
+        const r = origGetExtraMenuOptions ? origGetExtraMenuOptions.apply(this, arguments) : undefined;
+
+        try {
+          const loraWidget = this.widgets.find((w) => w.name == "lora_name");
+          if (!loraWidget) {
+            return r;
+          }
+  
+          const loraName = loraWidget.value;
+          const data = findData(loraMeta, loraName);
+          const dataLen = data?.words.length || 0;
+          const words = data?.words || [];
+
+          let optionIndex = options.findIndex((o) => o?.content === "Properties");
+          if (optionIndex > -1) {
+            let newOptions = [
+              {
+                content: "View lora meta",
+                disabled: dataLen == 0,
+                callback: () => {
+                  let str = "";
+                  str += `${"URL".padEnd(8, " ")}: https://civitai.com/models/${data.modelId}?modelVersionId=${data.versionId}\n`;
+                  str += `${"Model".padEnd(8, " ")}: ${data.modelName}\n`;
+                  str += `${"Version".padEnd(8, " ")}: ${data.versionName}\n`;
+                  str += `${"Updated".padEnd(8, " ")}: ${new Date(data.updatedAt).toISOString().split('T')[0]}\n\n`;
+
+                  str += "Triger Words:\n";
+                  str += words.join(", ");
+
+                  createNote(str, this.pos[0] + this.size[0] + 16, this.pos[1]);
+                }
+              }
+            ];
+            
+            options.splice(
+              optionIndex,
+              0,
+              ...newOptions
+            );
+          }
+        } catch(err) {
+          console.error(err);
+        }
+
+        return r;
+      }
     }
 	},
 });

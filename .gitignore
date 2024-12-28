@@ -1,7 +1,8 @@
 # ComfyUI Registry
 
 node.zip
-latest.json
+ckpt_latest.json
+lora_latest.json
 
 # custom
 

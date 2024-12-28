@@ -1,14 +1,15 @@
 # comfyui-view-recommendations
 
-Load model generation data from civitai.
+Load model generation data and lora trigger words from civitai.
 
 ## Usage
 
-1. Select "Load Checkpoint"
+#### Model metadata
+
+1. Select Load checkpoint node
 2. Right click
-3. Click "View Recommendations" option
-4. Click any option
-5. A note with metadata is created on the right  
+3. Click "View ckpt meta" option
+4. A note with metadata is created on the right  
 
 ```
 URL       : https://civitai.com/models/65203?modelVersionId=69832
@@ -27,6 +28,24 @@ masterpiece, high quality best quality,1girl, bangs, beach, blue_sky, blush, bow
 Negative prompt:
 EasyNegative, drawn by bad-artist, sketch by bad-artist-anime, (bad_prompt:0.8), (artist name, signature, watermark:1.4), (ugly:1.2), (worst quality, poor details:1.4), bad-hands-5, badhandv4, blurry
 ```
+
+#### Lora trigger words
+
+1. Select Load lora node
+2. Right click
+3. Click "View lora meta" option
+4. A note with metadata is created on the right  
+
+```
+URL     : https://civitai.com/models/550871?modelVersionId=1147165
+Model   : [BSS] - Styles for Pony
+Version : GLSHS v4.0
+Updated : 2024-12-09
+
+Triger Words:
+SHSLG
+```
+
 
 ## References  
 
