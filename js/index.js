@@ -192,7 +192,7 @@ app.registerExtension({
                   str += `${"Version".padEnd(8, " ")}: ${data.versionName}\n`;
                   str += `${"Updated".padEnd(8, " ")}: ${new Date(data.updatedAt).toISOString().split('T')[0]}\n\n`;
 
-                  str += "Triger Words:\n";
+                  str += "Trigger words:\n";
                   str += words.join(", ");
 
                   createNote(str, this.pos[0] + this.size[0] + 16, this.pos[1]);

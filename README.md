@@ -42,7 +42,7 @@ Model   : [BSS] - Styles for Pony
 Version : GLSHS v4.0
 Updated : 2024-12-09
 
-Triger Words:
+Trigger words:
 SHSLG
 ```
 
